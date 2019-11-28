@@ -7,14 +7,11 @@
 # Variables
 SAVEIFS=$IFS	# Backing up the delimiter used by arrays to differentiate between different data in the array (prior to changing it)
 IFS=$'\n'	# Changing the delimiter used by arrays from a space to a new line, this allows a list of users (on new lines) to be stored in to an array
-NUMBER_OF_SITES="30"
-RANDOM_SITES=$(cat /etc/localdomains | shuf -n $NUMBER_OF_SITES) # Variable needs to be below $NUMBER_OF_SITES
-CURL_TIMEOUT="5" # Number of seconds
+#NUMBER_OF_SITES="30"
+CURL_TIMEOUT="3" # Number of seconds
 # Functions
 
 # Main Script
-#cat /dev/null > /tmp/online-sites.log # Clears temporary log from any prior runs
-
 
 # Menu asking the user if this is the first run or post upgrade testing
 MENU_OPTION=$(whiptail --title "Upgrade Site Tester" --menu "Choose an option" 20 60 5 \
@@ -28,6 +25,12 @@ case $MENU_OPTION in
 
 if [ $FIRST_RUN = "YES" ]
 then
+
+    NUMBER_OF_SITES=$(whiptail --inputbox "Number of Sites" 8 78 30 --title "Number of Sites" 3>&1 1>&2 2>&3)
+
+    # Picks a however many sites the user specified at random from the server
+    RANDOM_SITES=$(cat /etc/localdomains | shuf -n $NUMBER_OF_SITES) # Variable needs to be below $NUMBER_OF_SITES
+
     for SITE in $RANDOM_SITES
     do
         # Tests site
@@ -55,7 +58,7 @@ else
 
         [[ ! $RESULT =~ "200 OK" ]] && echo "The is a problem with $SITE" && echo "Result: `curl --max-time $CURL_TIMEOUT -Is https://$SITE | head -n 1`"
 
-        sleep 2
+        sleep 1
 
     done
 
