@@ -7,8 +7,14 @@
 # Variables
 SAVEIFS=$IFS	# Backing up the delimiter used by arrays to differentiate between different data in the array (prior to changing it)
 IFS=$'\n'	# Changing the delimiter used by arrays from a space to a new line, this allows a list of users (on new lines) to be stored in to an array
-#NUMBER_OF_SITES="30"
-CURL_TIMEOUT="3" # Number of seconds
+CURL_TIMEOUT="2" # Number of seconds
+
+# Colours
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
 # Functions
 
 # Main Script
@@ -23,7 +29,7 @@ case $MENU_OPTION in
     "Post-Upgrade Check") FIRST_RUN="NO"
     esac
 
-if [ $FIRST_RUN = "YES" ]
+if [ "$FIRST_RUN" = "YES" ]
 then
 
     NUMBER_OF_SITES=$(whiptail --inputbox "Number of Sites" 8 78 30 --title "Number of Sites" 3>&1 1>&2 2>&3)
@@ -47,16 +53,16 @@ then
 
 else
 
-    echo "POST UPGRADE MODE ENABLED..."
+    echo && echo "Post Upgrade Testing..."
 
     for SITE in $(cat /tmp/online-sites.log)
     do
-        echo "Testing... $SITE"
+        echo "OK - $SITE"
 
         # Tests site
         RESULT=$(curl --max-time $CURL_TIMEOUT -Is https://$SITE | grep 'HTTP/1.1 200 OK')
 
-        [[ ! $RESULT =~ "200 OK" ]] && echo "The is a problem with $SITE" && echo "Result: `curl --max-time $CURL_TIMEOUT -Is https://$SITE | head -n 1`"
+        [[ ! $RESULT =~ "200 OK" ]] && echo -e "${YELLOW}ERROR${NC} - ${YELLOW}$SITE${NC} did not return a 200 and requires further investigation."
 
         sleep 1
 
