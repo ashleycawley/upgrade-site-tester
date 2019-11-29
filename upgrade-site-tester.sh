@@ -39,12 +39,35 @@ then
 
     for SITE in $RANDOM_SITES
     do
-        # Tests site
+        # Tests sites
         RESULT=$(curl --max-time $CURL_TIMEOUT -Is https://$SITE | grep 'HTTP/1.1 200 OK')
 
         # Logs working websites into a temporary log file
         [[ $RESULT =~ "200 OK" ]] && echo "$SITE" >> /tmp/online-sites.log && echo "$SITE saved for later re-testing."
 
+    done
+
+    # Chances are that not all of the X number of sites the user choose will be OK - 200 to start with so this while loop
+    # checks to see if the log of working sites matches the number the user specified, if it doesn't then it continues
+    # adding additional sites to the list until it does match that number
+    while [ `cat /tmp/online-sites.log | wc -l` -ne $NUMBER_OF_SITES ]
+    do
+        ADDITIONAL_SITES=$(cat /etc/localdomains | shuf -n 1) # Variable needs to be below $NUMBER_OF_SITES
+
+        for SITE in $ADDITIONAL_SITES
+        do
+            # Tests sites
+            RESULT=$(curl --max-time $CURL_TIMEOUT -Is https://$SITE | grep 'HTTP/1.1 200 OK')
+
+            # Logs working websites into a temporary log file
+            [[ $RESULT =~ "200 OK" ]] && echo "$SITE" >> /tmp/online-sites.log && echo "$SITE saved for later re-testing."
+
+            # Removes duplicates from the list of sites
+            sort -u /tmp/online-sites.log > /tmp/online-sites.log-dedup
+            cat /tmp/online-sites.log-dedup > /tmp/online-sites.log
+            rm -f /tmp/online-sites.log-dedup
+
+        done
     done
 
     IFS=$SAVEIFS # Resets $IFS this changes the delimiter that arrays use from new lines (\n) back to just spaces (which is what it normally is)
@@ -55,7 +78,7 @@ else
 
     echo && echo "Post Upgrade Testing..."
 
-    for SITE in $(cat /tmp/online-sites.log)
+    for SITE in $(cat /tmp/online-sites.log)``
     do
         #echo "OK - $SITE" | tee -a /tmp/online-sites.log-results
 
