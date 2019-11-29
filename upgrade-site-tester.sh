@@ -57,16 +57,29 @@ else
 
     for SITE in $(cat /tmp/online-sites.log)
     do
-        echo "OK - $SITE"
+        #echo "OK - $SITE" | tee -a /tmp/online-sites.log-results
 
         # Tests site
         RESULT=$(curl --max-time $CURL_TIMEOUT -Is https://$SITE | grep 'HTTP/1.1 200 OK')
 
-        [[ ! $RESULT =~ "200 OK" ]] && echo -e "${YELLOW}ERROR${NC} - ${YELLOW}$SITE${NC} did not return a 200 and requires further investigation."
+        [[ $RESULT =~ "200 OK" ]] && echo -e "OK - $SITE" | tee -a /tmp/online-sites.log-results
+
+        [[ ! $RESULT =~ "200 OK" ]] && echo -e "${YELLOW}ERROR${NC} - ${YELLOW}$SITE${NC} did not return a 200 and requires further investigation." | tee -a /tmp/online-sites.log-results
 
         sleep 1
 
     done
+
+    # Compiles a Summary review for the Engineer
+    NUMBER_OF_SITES_TESTED=$(cat /tmp/online-sites.log | wc -l)
+    NUMBER_OF_OK_SITES=$(grep -i OK /tmp/online-sites.log-results | wc -l)
+    NUMBER_OF_FAILED_SITES=$(grep -i ERROR /tmp/online-sites.log-results | wc -l)
+    echo && echo -e "Testing Summary: ${YELLOW}$NUMBER_OF_SITES_TESTED${NC} websites tested and the following was discovered..."
+    echo -e "${GREEN}OK${NC} - $NUMBER_OF_OK_SITES"
+    echo -e "${YELLOW}Failed ${NC}- $NUMBER_OF_FAILED_SITES"
+    echo
+    rm -f /tmp/online-sites.log-results # Deletes temporary stats file
+
 
     cat /dev/null > /tmp/online-sites.log # Clears temporary log from any prior runs
 
